@@ -3,6 +3,9 @@ import sqlite3
 import pandas as pd
 import shutil
 
+# Secure Password for Database Download
+ADMIN_PASSWORD = "your_secure_password_here"  # Change this to a strong password
+
 # Database connection
 def create_connection():
     return sqlite3.connect("healthcare.db")
@@ -16,6 +19,7 @@ def create_table():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
             age INTEGER NOT NULL
         )
     """)
@@ -23,42 +27,83 @@ def create_table():
     conn.close()
 
 # Insert user into database
-def insert_user(name, email, age):
+def insert_user(name, email, password, age):
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", (name, email, age))
+    cursor.execute("INSERT INTO users (name, email, password, age) VALUES (?, ?, ?, ?)", (name, email, password, age))
     conn.commit()
     conn.close()
 
 # Fetch all users
 def fetch_users():
     conn = create_connection()
-    df = pd.read_sql_query("SELECT * FROM users", conn)
+    df = pd.read_sql_query("SELECT id, name, email, age FROM users", conn)  # Exclude password for security
     conn.close()
     return df
 
+# User authentication
+def authenticate_user(email, password):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
 # UI Setup
-st.title("Healthcare User Registration")
+st.title("Healthcare Management System")
 
-menu = st.sidebar.selectbox("Menu", ["Register", "View Users", "Download Database"])
+menu = st.sidebar.selectbox("Menu", ["Register", "Login", "Treatment", "Edit Profile", "Change Password", "View Users", "Download Database"])
 
+# Register
 if menu == "Register":
     st.subheader("Register User")
     
     name = st.text_input("Name")
     email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
     age = st.number_input("Age", min_value=1, step=1)
     
     if st.button("Register"):
-        if name and email and age:
+        if name and email and password and age:
             try:
-                insert_user(name, email, age)
+                insert_user(name, email, password, age)
                 st.success("User registered successfully!")
             except sqlite3.IntegrityError:
                 st.error("Email already exists!")
         else:
             st.error("Please fill all fields.")
 
+# Login
+elif menu == "Login":
+    st.subheader("User Login")
+    
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    
+    if st.button("Login"):
+        user = authenticate_user(email, password)
+        if user:
+            st.success(f"Welcome {user[1]}!")
+        else:
+            st.error("Invalid credentials!")
+
+# Treatment Section
+elif menu == "Treatment":
+    st.subheader("Treatment Section")
+    st.write("🚑 Here you can manage patient treatments!")
+
+# Edit Profile
+elif menu == "Edit Profile":
+    st.subheader("Edit Profile")
+    st.write("🔧 Feature to update user details coming soon!")
+
+# Change Password
+elif menu == "Change Password":
+    st.subheader("Change Password")
+    st.write("🔑 Secure password update feature coming soon!")
+
+# View Registered Users
 elif menu == "View Users":
     st.subheader("Registered Users")
     df = fetch_users()
@@ -68,10 +113,16 @@ elif menu == "View Users":
     else:
         st.write("No users found.")
 
+# Download Database (Password Protected)
 elif menu == "Download Database":
-    st.subheader("Download SQLite Database")
+    st.subheader("Download SQLite Database (Admin Only)")
+    
+    admin_password = st.text_input("Enter Admin Password", type="password")
     
     if st.button("Download Database"):
-        shutil.copy("healthcare.db", "healthcare_download.db")
-        with open("healthcare_download.db", "rb") as file:
-            st.download_button("Click here to download", file, file_name="healthcare.db")
+        if admin_password == ADMIN_PASSWORD:
+            shutil.copy("healthcare.db", "healthcare_download.db")
+            with open("healthcare_download.db", "rb") as file:
+                st.download_button("Click here to download", file, file_name="healthcare.db")
+        else:
+            st.error("❌ Incorrect password! Access denied.")
