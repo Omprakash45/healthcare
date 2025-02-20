@@ -16,3 +16,6 @@ pymysql
 google-cloud-aiplatform #this is required
 google-cloud-logging  #
 utils
+streamlit
+pymysql
+pandas
