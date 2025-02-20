@@ -6,7 +6,7 @@ conn = sqlite3.connect("healthcare.db")  # Ensure this file is in the same direc
 cursor = conn.cursor()
 
 # Fetch data
-df = pd.read_sql_query("SELECT * FROM users", conn)
+df = pd.read_sql_query("SELECT id, name, email, age FROM users", conn)  # Exclude password for security
 conn.close()
 
 # Display data
