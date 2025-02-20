@@ -8,7 +8,7 @@ ADMIN_PASSWORD = "548017"  # Change this to a strong password
 
 # Database connection
 def create_connection():
-    return sqlite3.connect("healthcare.db")
+    return sqlite3.connect("healthcare.db", check_same_thread=False)  # Allows multiple threads to access
 
 # Create users table if not exists
 def create_table():
@@ -26,13 +26,23 @@ def create_table():
     conn.commit()
     conn.close()
 
+# Ensure table is created at startup
+create_table()
+
 # Insert user into database
 def insert_user(name, email, password, age):
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (name, email, password, age) VALUES (?, ?, ?, ?)", (name, email, password, age))
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute("INSERT INTO users (name, email, password, age) VALUES (?, ?, ?, ?)", (name, email, password, age))
+        conn.commit()
+        st.success("User registered successfully!")
+    except sqlite3.IntegrityError:
+        st.error("Email already exists!")
+    except sqlite3.OperationalError as e:
+        st.error(f"Database Error: {e}")
+    finally:
+        conn.close()
 
 # Fetch all users
 def fetch_users():
@@ -53,7 +63,7 @@ def authenticate_user(email, password):
 # UI Setup
 st.title("Healthcare Management System")
 
-menu = st.sidebar.selectbox("Menu", ["Register", "Login", "Treatment", "Edit Profile", "Change Password", "View Users", "Download Database"])
+menu = st.sidebar.selectbox("Menu", ["Register", "Login", "View Users", "Download Database"])
 
 # Register
 if menu == "Register":
@@ -66,11 +76,7 @@ if menu == "Register":
     
     if st.button("Register"):
         if name and email and password and age:
-            try:
-                insert_user(name, email, password, age)
-                st.success("User registered successfully!")
-            except sqlite3.IntegrityError:
-                st.error("Email already exists!")
+            insert_user(name, email, password, age)
         else:
             st.error("Please fill all fields.")
 
@@ -87,21 +93,6 @@ elif menu == "Login":
             st.success(f"Welcome {user[1]}!")
         else:
             st.error("Invalid credentials!")
-
-# Treatment Section
-elif menu == "Treatment":
-    st.subheader("Treatment Section")
-    st.write("🚑 Here you can manage patient treatments!")
-
-# Edit Profile
-elif menu == "Edit Profile":
-    st.subheader("Edit Profile")
-    st.write("🔧 Feature to update user details coming soon!")
-
-# Change Password
-elif menu == "Change Password":
-    st.subheader("Change Password")
-    st.write("🔑 Secure password update feature coming soon!")
 
 # View Registered Users
 elif menu == "View Users":
