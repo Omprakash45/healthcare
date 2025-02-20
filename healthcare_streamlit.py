@@ -3,12 +3,12 @@ import sqlite3
 import pandas as pd
 import shutil
 
-# Secure Password for Database Download
-ADMIN_PASSWORD = "548017"  # Change this to a strong password
+# Secure Password for Database Download (Change this)
+ADMIN_PASSWORD = "548017"
 
 # Database connection
 def create_connection():
-    return sqlite3.connect("healthcare.db", check_same_thread=False)  # Allows multiple threads to access
+    return sqlite3.connect("healthcare.db", check_same_thread=False)
 
 # Create users table if not exists
 def create_table():
