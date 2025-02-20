@@ -4,7 +4,7 @@ import pandas as pd
 import shutil
 
 # Secure Password for Database Download
-ADMIN_PASSWORD = "your_secure_password_here"  # Change this to a strong password
+ADMIN_PASSWORD = "548017"  # Change this to a strong password
 
 # Database connection
 def create_connection():
